@@ -14,6 +14,7 @@ namespace ApprovalTests.Tests.Async
         public void TestAsyncExceptionFromVoid()
         {
             using (Namers.ApprovalResults.UniqueForOs())
+            using (Namers.ApprovalResults.UniqueForRuntime())
             {
                 AsyncApprovals.VerifyException(ThrowBabyThrow(),
                     ScrubberUtils.Combine(

@@ -17,9 +17,10 @@ namespace ApprovalTests.Tests.Namer
         [Test]
         public void UniqueForRuntime()
         {
-            var runtimes = new[] {".NET Core 4.6.26725.06", ".NET Framework 4.7.3132.0"};
-            Approvals.VerifyAll("runtimes", runtimes,
-                s => $"{s} => {ApprovalResults.GetDotNetRuntime(true, s)}");
+            using (ApprovalResults.UniqueForRuntime())
+            {
+                Approvals.Verify(ApprovalResults.GetDotNetRuntime(true));
+            }
         }
 
         [Test]

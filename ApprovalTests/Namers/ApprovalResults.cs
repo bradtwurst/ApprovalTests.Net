@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using ApprovalUtilities.Utilities;
@@ -30,11 +31,6 @@ namespace ApprovalTests.Namers
         public static string GetDotNetRuntime(bool throwOnError)
         {
             var frameworkDescription = RuntimeInformation.FrameworkDescription;
-            return GetDotNetRuntime(throwOnError, frameworkDescription);
-        }
-
-        public static string GetDotNetRuntime(bool throwOnError, string frameworkDescription)
-        {
             if (frameworkDescription.StartsWith(".NET Framework", StringComparison.OrdinalIgnoreCase))
             {
                 var version = Version.Parse(frameworkDescription.Replace(".NET Framework ", ""));
@@ -43,17 +39,8 @@ namespace ApprovalTests.Namers
 
             if (frameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase))
             {
-                var version = Version.Parse(frameworkDescription.Replace(".NET Core ", ""));
-                var map = new Dictionary<string, string>
-                {
-                    {
-                        "4.6","2.1"
-                    }
-                };
-                if (map.TryGetValue($"{version.Major}.{version.Minor}", out var result))
-                {
-                    return "NetCore_" + result;
-                }
+                var version = GetNetCoreVersion();
+                return $"NetCore_{version.Major}.{version.Minor}";
             }
 
             if (throwOnError)
@@ -70,6 +57,22 @@ https://github.com/approvals/ApprovalTests.Net/issues/new?title=Unknown%3A+%27Ru
             }
 
             return frameworkDescription;
+        }
+
+        static Version GetNetCoreVersion()
+        {
+            var assembly = typeof(GCSettings).GetTypeInfo().Assembly;
+            var assemblyPath = assembly.CodeBase.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
+            var netCoreAppIndex = Array.IndexOf(assemblyPath, "Microsoft.NETCore.App");
+            if (netCoreAppIndex > 0 && netCoreAppIndex < assemblyPath.Length - 2)
+            {
+                var versionString = assemblyPath[netCoreAppIndex + 1];
+                if (Version.TryParse(versionString, out var netCoreVersion))
+                {
+                    return netCoreVersion;
+                }
+            }
+            return null;
         }
 
         public static IDisposable UniqueForMachineName()
